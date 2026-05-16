@@ -43,7 +43,7 @@ def load_model_and_tokenizer():
     
     return tokenizer, model, labels
 
-def predict_sentiment_batch(reviews, tokenizer, model, batch_size=32):
+def predict_sentiment_batch(reviews, tokenizer, model, batch_size=32): #this is a function that feeds reviees to the model in batches and reeturns the predicted results
     """
     Predict sentiment for a batch of reviews using DistilBERT
     
@@ -52,26 +52,26 @@ def predict_sentiment_batch(reviews, tokenizer, model, batch_size=32):
         - confidence_score: probability of the predicted class
     """
     
-    # Tokenize all reviews
+    # Tokenize all reviews (here is where the human text is converted to numbers that are feed to the model) and it comes from the previous code
     encoded_inputs = tokenizer(
         reviews,
-        padding=True,
+        padding=True, #AI needs fixed size input so we are making it equal by adding padding dummies to the tokens
         truncation=True,
         max_length=128,
-        return_tensors="pt"
+        return_tensors="pt" #we are not returning python lists. we are returning pyTorch tensor
     )
-    
     # Move inputs to device
-    input_ids = encoded_inputs['input_ids'].to(device)
+    #just before the next code, the data in in regular ram,
+    input_ids = encoded_inputs['input_ids'].to(device) #the device can be cpu or gpu
     attention_mask = encoded_inputs['attention_mask'].to(device)
     
     # Create TensorDataset
-    dataset = TensorDataset(input_ids, attention_mask)
+    dataset = TensorDataset(input_ids, attention_mask) #it wraps them in to pairs of tensors that can be fed to the model in batches
     dataloader = DataLoader(dataset, batch_size=batch_size)
     
-    all_logits = []
+    all_logits = [] #this is where we will store the output of the model for each batch. the model will output a logit for each class (positive and negative) for each review in the batch. so if we have 32 reviews in a batch, we will get 32 logits for positive and 32 logits for negative, which will be stored in this list.
     
-    with torch.no_grad():  # Disable gradient calculation for inference
+    with torch.no_grad():  # Disable gradient calculation for inference because we are not training the model, we are just using it to make predictions. This will save memory and speed up inference.
         for batch_input_ids, batch_attention_mask in tqdm(dataloader, desc="Processing batches"):
             # Forward pass
             outputs = model(
@@ -84,7 +84,8 @@ def predict_sentiment_batch(reviews, tokenizer, model, batch_size=32):
     # Concatenate all logits
     all_logits = torch.cat(all_logits, dim=0)
     
-    # Get probabilities using softmax
+    # Get probabilities using 
+    
     probabilities = torch.softmax(all_logits, dim=1)
     
     # Get predicted class and confidence
