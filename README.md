@@ -1,104 +1,73 @@
-# Fintech Review Analytics
+## Task 3: PostgreSQL Database Setup
 
-## Project Overview
+### Database Architecture
 
-Analyzing Google Play Store reviews for Ethiopian banks (CBE, BOA, Dashen) to extract sentiment and themes. This project helps banks understand what users love, what frustrates them, and what to prioritize next.
+A PostgreSQL database named `bank_reviews` was designed to store and query the analyzed review data. The schema follows a star schema pattern with two tables: `banks` (dimension) and `reviews` (fact).
 
-### Business Problem
+#### Schema Design
 
-Mobile banking adoption in Ethiopia is accelerating. Thousands of users leave reviews daily, but this feedback remains unanalyzed. This project transforms raw reviews into actionable insights for product teams.
+**Banks Table (Dimension)**
 
-### Objectives
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| bank_id | SERIAL | PRIMARY KEY | Unique identifier for each bank |
+| bank_name | VARCHAR(50) | NOT NULL, UNIQUE | Bank name (CBE, BOA, Dashen) |
+| app_name | VARCHAR(100) | | Full mobile application name |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Record creation timestamp |
 
-- Scrape and clean user reviews from Google Play Store
-- Classify sentiment (positive/negative/neutral)
-- Extract recurring themes (login issues, transfer problems, UI complaints)
-- Provide bank-specific recommendations
+**Reviews Table (Fact)**
 
----
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| review_id | VARCHAR(100) | PRIMARY KEY | Unique review identifier |
+| bank_id | INTEGER | FOREIGN KEY (banks) | Links review to specific bank |
+| review_text | TEXT | NOT NULL | Original user review content |
+| rating | INTEGER | CHECK (1-5) | Star rating (1 to 5) |
+| review_date | DATE | | Date when review was posted |
+| sentiment_label | VARCHAR(10) | | POSITIVE, NEGATIVE, or NEUTRAL |
+| sentiment_score | DECIMAL(5,4) | | Confidence score from 0 to 1 |
+| identified_theme | VARCHAR(100) | | Extracted theme category |
+| source | VARCHAR(50) | | Data source (Google Play) |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Record creation timestamp |
 
-## Data Collection Methodology
+### Setup Instructions
 
-### Scraping Strategy
+#### Step 1: Install PostgreSQL
 
-Reviews were scraped from the Google Play Store using the `google-play-scraper` Python library. The following apps were targeted:
+Download and install PostgreSQL from https://www.postgresql.org/download/
 
-| Bank | App Name | Package Name |
-|------|----------|--------------|
-| CBE | Commercial Bank of Ethiopia | `com.combanketh.mobilebanking` |
-| BOA | Bank of Abyssinia | `com.boa.boaMobileBanking` |
-| Dashen | Dashen Bank | `com.dashen.dashensuperapp` |
+Default installation includes:
+- PostgreSQL server
+- pgAdmin (GUI management tool)
+- Command line tools (psql)
 
-### Scraping Parameters
+#### Step 2: Create Database
 
-| Parameter | Value |
-|-----------|-------|
-| Language | English (`lang='en'`) |
-| Country | United States (`country='us'`) |
-| Sort Order | Newest first (`Sort.NEWEST`) |
-| Target per bank | 500+ reviews |
+Using pgAdmin:
+1. Open pgAdmin
+2. Right-click on "Databases" -> Create -> Database
+3. Name: `bank_reviews`
+4. Click Save
 
-### Data Collection Results
-
-| Bank | Reviews Collected | Status |
-|------|------------------|--------|
-| CBE | 500 |  Success |
-| BOA | 500 |  Success |
-| Dashen | 500 |  Success |
-| **Total** | **1,500** |  |
-
-### Date Range
-
-The collected reviews span from **February 12, 2025** to **May 14, 2026** (approximately 15 months).
-
-### Scraping Limitations
-
-1. **Rate Limiting:** Google Play enforces rate limits. A 1-2 second delay was added between requests to avoid being blocked.
-2. **Review Availability:** Only reviews with written text were collected. Pure star ratings without comments are not included.
-3. **Language Filter:** Only English reviews were collected due to the scope of this analysis.
-4. **Pagination:** The continuation token method was used to fetch all available reviews, which successfully retrieved 500 reviews per bank.
-
-### Data Preprocessing
-
-After scraping, the following cleaning steps were applied:
-
-1. **Duplicate Removal:** 0 duplicate reviews found and removed
-2. **Missing Values:** 0 rows with missing review text or rating
-3. **Date Normalization:** Converted all dates to `YYYY-MM-DD` format
-4. **Final Dataset Columns:** `review`, `rating`, `date`, `bank`, `source`
-
-### Final Dataset Quality
-
-| Metric | Value |
-|--------|-------|
-| Total reviews | 1,500 |
-| Reviews with text | 1,500 (100%) |
-| Complete ratings | 1,500 (100%) |
-| Date range | 2025-02-12 to 2026-05-14 |
-
-### Rating Distribution
-
-| Rating | Count | Percentage |
-|--------|-------|------------|
-| 5 stars | 939 | 62.6% |
-| 4 stars | 111 | 7.4% |
-| 3 stars | 80 | 5.3% |
-| 2 stars | 48 | 3.2% |
-| 1 star | 322 | 21.5% |
-
----
-
-## Setup Instructions
-
-### Prerequisites
-
-- Python 3.9+
-- Git
-
-### Installation
-
-1. **Clone the repository**
+Using command line:
 ```bash
-git clone https://github.com/hawi088/fintech.git
-cd fintech
+psql -U postgres -c "CREATE DATABASE bank_reviews;"
 ```
+#### Step 3: Run Schema
+Execute the schema file to create tables and indexes:
+
+```bash
+psql -U postgres -d bank_reviews -f schema.sql
+```
+#### Step 4: Configure Database Connection
+```bash
+DB_HOST=localhost
+DB_NAME=bank_reviews
+DB_USER=postgres
+DB_PASSWORD=your_password_here
+```
+##### Step 5: Install Python Dependencies
+```bash
+pip install psycopg2-binary pandas python-dotenv
+```
+
