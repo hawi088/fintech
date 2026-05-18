@@ -257,7 +257,7 @@ class ThematicPipeline:
     
     def save_results(self, df, output_path='data/thematic_pipeline_results.csv'):
         """Save results with required columns"""
-        output_df = df[['review_id', 'review', 'sentiment_label', 'sentiment_score', 'identified_theme']]
+        output_df = df[['review_id', 'review', 'bank', 'sentiment_label', 'sentiment_score', 'identified_theme']]
         output_df.to_csv(output_path, index=False)
         print(f"\n Results saved to: {output_path}")
         print(f"   Columns: {output_df.columns.tolist()}")
